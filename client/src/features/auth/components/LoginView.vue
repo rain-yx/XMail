@@ -1,8 +1,8 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { ArrowRight, Eye, EyeOff, KeyRound, LockKeyhole, Mail, TriangleAlert } from 'lucide-vue-next';
-import { api } from '../api.js';
-import { useLenisContainer } from '../useLenis.js';
+import { api } from '@/shared/api/xmail-api.js';
+import { useLenisContainer } from '@/shared/composables/useLenisContainer.js';
 
 const props = defineProps({
   family: { type: String, required: true },
@@ -114,3 +114,5 @@ async function submit() {
     </div>
   </section>
 </template>
+
+<style scoped src="./LoginView.css"></style>

@@ -1,0 +1,112 @@
+.mail-sidebar {
+  width: 208px;
+  flex: 0 0 208px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+  background: #fff;
+  border-right: 1px solid #e5e8ef;
+}
+.folder-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.folder-scroll__content { min-height: 100%; }
+.folder-menu {
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  gap: 5px;
+}
+.folder-menu__item {
+  width: 100%;
+  height: fit-content;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  color: #5f687b;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.1s ease-in;
+}
+.folder-menu__item > svg { width: 15px; }
+.folder-menu__item:hover { background: #f3f5fa; }
+.folder-menu__item.is-active {
+  color: #3152d0;
+  background: #eef1fc;
+  font-weight: 700;
+  font-size: 13px;
+}
+.folder-menu__item.is-active > svg { width: 16px; }
+.folder-menu__item span { flex: 1; }
+.folder-menu__item b {
+  padding: 2px 5px;
+  color: #445274;
+  background: #dfe5f6;
+  border-radius: 10px;
+  font-size: 8px;
+  font-weight: 600;
+}
+.folder-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 8px 20px;
+}
+.folder-skeleton i {
+  height: 30px;
+  background: linear-gradient(90deg, #edf0f5 25%, #f7f8fa 50%, #edf0f5 75%);
+  background-size: 200% 100%;
+  border-radius: 8px;
+  animation: shimmer 1.4s infinite;
+}
+.sidebar-footer {
+  padding: 10px;
+  border-top: 1px solid #edf0f5;
+}
+.logout-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  color: #657087;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 10px;
+}
+.logout-button:hover { background: #f2f4f8; }
+.sidebar-footer small {
+  display: block;
+  margin-top: 6px;
+  padding-left: 13px;
+  color: #a0a8b7;
+  font-size: 10px;
+}
+
+@media (max-width: 1024px) {
+  .mail-sidebar { width: clamp(168px, 20vw, 208px); flex-basis: clamp(168px, 20vw, 208px); }
+}
+@media (max-width: 760px) {
+  .folder-menu { padding: 4px; gap: 4px; }
+  .folder-menu__item { gap: 7px; padding: 8px; font-size: 10px; }
+  .folder-menu__item.is-active { font-size: 11px; }
+  .sidebar-footer { padding: 8px; }
+  .logout-button { gap: 6px; padding: 8px 6px; font-size: 9px; }
+  .sidebar-footer small { padding-left: 6px; font-size: 8px; }
+}
+@media (max-width: 480px) {
+  .folder-menu__item,
+  .folder-menu__item.is-active { font-size: 13px; }
+  .logout-button { font-size: 12px; }
+  .sidebar-footer small { font-size: 11px; }
+}

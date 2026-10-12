@@ -11,6 +11,7 @@ import {
 import {
   ApiError,
   downloadAttachment,
+  getMailboxSnapshot,
   getMessage,
   listMailboxes,
   listMessages,
@@ -18,6 +19,11 @@ import {
   updateMessageFlags,
   verifyAccount,
 } from './imap-service.js';
+import {
+  stopMailWatcher,
+  stopSessionMailWatchers,
+  subscribeToMailEvents,
+} from './mail-watcher.js';
 import { getProvider, getPublicProviders } from './providers.js';
 import {
   addAccount,
@@ -99,6 +105,7 @@ app.get('/api/auth/session', requireSession, (req, res) => {
 });
 
 app.delete('/api/accounts/:accountId', requireSession, (req, res, next) => {
+  stopMailWatcher(`${req.sessionId}:${req.params.accountId}`);
   if (!removeAccount(req.session, req.params.accountId)) {
     return next(new ApiError(404, '邮箱账号不存在或已退出。', 'ACCOUNT_NOT_FOUND'));
   }
@@ -106,7 +113,9 @@ app.delete('/api/accounts/:accountId', requireSession, (req, res, next) => {
 });
 
 app.post('/api/auth/logout', (req, res) => {
-  deleteSession(req.cookies?.[sessionCookie]);
+  const sessionId = req.cookies?.[sessionCookie];
+  stopSessionMailWatchers(sessionId);
+  deleteSession(sessionId);
   res.clearCookie(sessionCookie, { path: '/' });
   res.status(204).end();
 });
@@ -151,6 +160,45 @@ app.get('/api/messages', requireSession, requireAccount, asyncHandler(async (req
   const result = await listMessages(req.account, req.query);
   res.json(result);
 }));
+
+app.get('/api/messages/snapshot', requireSession, requireAccount, asyncHandler(async (req, res) => {
+  const result = await getMailboxSnapshot(req.account, req.query.mailbox, req.query.limit);
+  res.json(result);
+}));
+
+app.get('/api/mail-events', requireSession, requireAccount, (req, res) => {
+  res.status(200);
+  res.set({
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  res.flushHeaders();
+  res.write('retry: 5000\n\n');
+
+  let closed = false;
+  const sendEvent = (event, data) => {
+    if (closed || res.writableEnded) return;
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
+  const unsubscribe = subscribeToMailEvents(
+    `${req.sessionId}:${req.accountId}`,
+    req.account,
+    sendEvent,
+  );
+  const heartbeat = setInterval(() => {
+    if (!closed && !res.writableEnded) res.write(': heartbeat\n\n');
+  }, 25_000);
+  heartbeat.unref();
+
+  req.on('close', () => {
+    if (closed) return;
+    closed = true;
+    clearInterval(heartbeat);
+    unsubscribe();
+  });
+});
 
 app.get('/api/messages/:uid', requireSession, requireAccount, asyncHandler(async (req, res) => {
   const message = await getMessage(
@@ -224,6 +272,7 @@ function requireSession(req, res, next) {
   const session = getSession(sessionId);
   if (!session) return next(new ApiError(401, '登录状态已失效，请重新登录。', 'SESSION_EXPIRED'));
   req.session = session;
+  req.sessionId = sessionId;
   res.cookie(sessionCookie, sessionId, cookieOptions(req));
   next();
 }

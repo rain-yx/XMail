@@ -15,9 +15,9 @@ import {
   Trash2,
   X,
 } from 'lucide-vue-next';
-import { useLenisContainer } from '../useLenis.js';
-import { formatMailDate, getVisibleRange } from '../virtual-list.js';
-import ContextMenu from './ContextMenu.vue';
+import { useLenisContainer } from '@/shared/composables/useLenisContainer.js';
+import ContextMenu from '@/shared/ui/context-menu/ContextMenu.vue';
+import { formatMailDate, getVisibleRange } from '../lib/virtual-list.js';
 
 const props = defineProps({
   messages: { type: Array, default: () => [] },
@@ -415,3 +415,5 @@ function scrollToTop() {
     />
   </section>
 </template>
+
+<style scoped src="./MessageList.css"></style>

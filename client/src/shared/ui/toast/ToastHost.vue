@@ -1,6 +1,6 @@
 <script setup>
 import { CircleCheck, CircleX, X } from 'lucide-vue-next';
-import { removeToast, toasts } from '../toast.js';
+import { removeToast, toasts } from './toast-store.js';
 </script>
 
 <template>
@@ -15,3 +15,5 @@ import { removeToast, toasts } from '../toast.js';
     </TransitionGroup>
   </Teleport>
 </template>
+
+<style scoped src="./ToastHost.css"></style>

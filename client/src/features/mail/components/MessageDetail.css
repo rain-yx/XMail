@@ -1,0 +1,230 @@
+.detail-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+}
+.detail-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgb(17 25 43 / 42%);
+}
+.message-detail {
+  width: min(760px, 100%);
+  height: 100%;
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  box-shadow: -18px 0 55px rgb(20 29 49 / 18%);
+}
+.detail-toolbar {
+  height: 58px;
+  flex: 0 0 58px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  border-bottom: 1px solid #e7eaf0;
+}
+.detail-toolbar .is-starred { color: #efa929; }
+.detail-loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #748096;
+  font-size: 13px;
+}
+.detail-scroll { flex: 1; min-height: 0; overflow: auto; }
+.detail-content { min-height: 100%; padding: 30px clamp(22px, 5vw, 48px) 50px; }
+.detail-heading h2 {
+  margin: 0;
+  color: #1c263a;
+  font-size: clamp(23px, 3vw, 32px);
+  line-height: 1.35;
+  letter-spacing: -0.04em;
+}
+.sender-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 28px 0 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #edf0f5;
+}
+.sender-detail {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  flex: 1;
+  flex-direction: column;
+}
+.sender-detail strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: #263149;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0;
+  color: var(--primary);
+  background: transparent;
+  border: 0;
+  font-size: 11px;
+  cursor: pointer;
+}
+.sender-detail .link-button { color: #7d8799; }
+.sender-block time { color: #8993a6; font-size: 10px; white-space: nowrap; }
+.rotate-180 { transform: rotate(180deg); }
+.recipient-details {
+  margin: 0 0 20px;
+  overflow: hidden;
+  border: 1px solid #e2e6ed;
+  border-radius: 9px;
+  font-size: 12px;
+}
+.recipient-details > div {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  border-bottom: 1px solid #e8ebf0;
+}
+.recipient-details > div:last-child { border-bottom: 0; }
+.recipient-details dt,
+.recipient-details dd { margin: 0; padding: 9px 11px; }
+.recipient-details dt {
+  color: #6e788d;
+  background: #f7f8fa;
+  border-right: 1px solid #e8ebf0;
+}
+.recipient-details dd { color: #3d485d; overflow-wrap: anywhere; }
+.remote-image-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 10px 13px;
+  color: #795e1d;
+  background: #fff8e8;
+  border: 1px solid #f1dfb2;
+  border-radius: 9px;
+  font-size: 12px;
+}
+.remote-image-alert span { flex: 1; }
+.mail-body {
+  color: #303a4d;
+  font-family: Arial, "Microsoft YaHei", sans-serif;
+  font-size: 14px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+.mail-body--html :deep(img) { max-width: 100%; height: auto; }
+.mail-body--html :deep(table) { max-width: 100%; }
+.mail-body--text { margin: 0; white-space: pre-wrap; font: inherit; }
+.mail-body--html :deep(.xmail-blocked-image) {
+  display: inline-block;
+  min-width: 140px;
+  min-height: 28px;
+  padding: 5px;
+  color: #8c95a6;
+  background: #f2f4f8;
+  border: 1px dashed #d5dae4;
+}
+.attachments {
+  margin-top: 34px;
+  padding-top: 23px;
+  border-top: 1px solid #e8ebf1;
+}
+.attachments h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 14px;
+  color: #35405a;
+  font-size: 13px;
+}
+.attachment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+}
+.attachment-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  padding: 12px;
+  color: #3a465e;
+  border: 1px solid #e1e5ed;
+  border-radius: 11px;
+  text-decoration: none;
+}
+.attachment-card:hover { border-color: #9dadf0; background: #f8f9fe; }
+.attachment-icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  color: var(--primary);
+  background: #eef1fc;
+  border-radius: 9px;
+}
+.attachment-card > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.attachment-card strong {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.attachment-card small { margin-top: 3px; color: #929bad; font-size: 10px; }
+.drawer-enter-active { transition: opacity 0.28s ease; }
+.drawer-leave-active { transition: opacity 0.24s ease; }
+.drawer-enter-active .message-detail { transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1); }
+.drawer-leave-active .message-detail { transition: transform 0.3s cubic-bezier(0.4, 0, 1, 1); }
+.drawer-enter-active .detail-scrim,
+.drawer-leave-active .detail-scrim { transition: opacity 0.28s ease; }
+.drawer-enter-from,
+.drawer-leave-to { opacity: 0; }
+.drawer-enter-from .message-detail,
+.drawer-leave-to .message-detail { transform: translateX(100%); }
+.drawer-enter-from .detail-scrim,
+.drawer-leave-to .detail-scrim { opacity: 0; }
+
+@media (max-width: 1024px) {
+  .message-detail { width: min(672px, 100%); }
+}
+@media (max-width: 760px) {
+  .detail-content { padding: 24px 18px 40px; }
+  .sender-block { align-items: flex-start; }
+  .sender-block time { max-width: 90px; white-space: normal; text-align: right; }
+}
+@media (max-width: 480px) {
+  .detail-toolbar { height: 52px; flex-basis: 52px; padding-inline: 12px; }
+  .detail-content { padding: 20px 14px 32px; }
+  .detail-heading h2 { font-size: clamp(22px, 7vw, 28px); }
+  .sender-block { flex-direction: row; gap: 8px; margin-block: 20px; }
+  .sender-block time { max-width: 78px; font-size: 12px; text-align: right; }
+  .sender-detail strong { font-size: 14px; }
+  .sender-detail .link-button { font-size: 12px; }
+  .recipient-details { font-size: 13px; }
+  .recipient-details > div { grid-template-columns: 72px minmax(0, 1fr); }
+  .remote-image-alert { font-size: 13px; }
+  .mail-body { font-size: 16px; }
+  .attachments h3 { font-size: 14px; }
+  .attachment-card strong { font-size: 13px; }
+  .attachment-card small { font-size: 11px; }
+  .attachment-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+}

@@ -125,6 +125,7 @@ http {
             proxy_connect_timeout 15s;
             proxy_send_timeout 180s;
             proxy_read_timeout 180s;
+            proxy_buffering off;
             add_header Cache-Control "no-store" always;
         }
 
@@ -155,6 +156,8 @@ http {
 ```
 
 将 `example.com` 替换为自己的域名，将 `root` 替换为实际 Nginx `html` 路径。Windows Nginx 配置路径使用 `/`。
+
+`proxy_buffering off` 用于确保新邮件 SSE 事件立即转发给浏览器。删除该配置可能导致提醒延迟或长期不刷新。QQ 与支持 IDLE 的邮箱使用实时监听；不支持 IDLE 的网易端点使用每 10 秒一次的轻量 `STATUS` 兼容监听。详细机制及排查方法见 [实时新邮件监听与提醒](NEW_MAIL_NOTIFICATIONS.md)。
 
 验证并重新加载：
 

@@ -11,7 +11,7 @@ import {
   Star,
   Trash2,
 } from 'lucide-vue-next';
-import { useLenisContainer } from '../useLenis.js';
+import { useLenisContainer } from '@/shared/composables/useLenisContainer.js';
 
 defineProps({
   mailboxes: { type: Array, default: () => [] },
@@ -67,3 +67,5 @@ function folderIcon(folder) {
     </footer>
   </aside>
 </template>
+
+<style scoped src="./MailSidebar.css"></style>

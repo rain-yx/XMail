@@ -10,8 +10,8 @@ import {
   Star,
   X,
 } from 'lucide-vue-next';
-import { api } from '../api.js';
-import { useLenisContainer } from '../useLenis.js';
+import { api } from '@/shared/api/xmail-api.js';
+import { useLenisContainer } from '@/shared/composables/useLenisContainer.js';
 
 const props = defineProps({
   accountId: { type: String, required: true },
@@ -186,3 +186,5 @@ function formatBytes(bytes) {
     </Transition>
   </Teleport>
 </template>
+
+<style scoped src="./MessageDetail.css"></style>

@@ -1,33 +1,4 @@
-export class ApiRequestError extends Error {
-  constructor(message, status, code) {
-    super(message);
-    this.status = status;
-    this.code = code;
-  }
-}
-
-async function request(path, options = {}, accountId = '') {
-  const response = await fetch(path, {
-    credentials: 'same-origin',
-    ...options,
-    headers: {
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-      ...(accountId ? { 'X-XMail-Account-Id': accountId } : {}),
-      ...options.headers,
-    },
-  });
-
-  if (response.status === 204) return null;
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new ApiRequestError(
-      payload?.error?.message || '请求失败，请稍后重试。',
-      response.status,
-      payload?.error?.code || 'REQUEST_FAILED',
-    );
-  }
-  return payload;
-}
+import { request } from './http-client.js';
 
 export const api = {
   providers: () => request('/api/providers'),
@@ -45,6 +16,14 @@ export const api = {
     if (query) params.set('query', query);
     if (groupId) params.set('groupId', groupId);
     return request(`/api/messages?${params}`, {}, accountId);
+  },
+  mailboxSnapshot: (accountId, mailbox, limit = 20) => {
+    const params = new URLSearchParams({ mailbox, limit });
+    return request(`/api/messages/snapshot?${params}`, {}, accountId);
+  },
+  mailEventsUrl: (accountId) => {
+    const params = new URLSearchParams({ accountId });
+    return `/api/mail-events?${params}`;
   },
   aggregationRules: (accountId) => request('/api/aggregation-rules', {}, accountId),
   createAggregationRule: (accountId, rule) => request('/api/aggregation-rules', {

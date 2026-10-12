@@ -1,0 +1,207 @@
+.mail-workspace {
+  height: 100%;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  background: #f7f8fb;
+}
+.sidebar-shell { display: contents; }
+.sidebar-scrim,
+.folder-drawer-trigger.square-control { display: none; }
+.mail-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.mail-header {
+  height: 42px;
+  flex: 0 0 42px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 10px;
+  background: #fff;
+  border-bottom: 1px solid #e6e9f0;
+}
+.mail-search {
+  width: min(370px, 50vw);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 12px;
+  color: #8a94a6;
+  background: #f5f7fa;
+  border: 1px solid #e8ebf1;
+  border-radius: 5px;
+}
+.mail-search:focus-within {
+  border-color: #a8b5e9;
+  box-shadow: 0 0 0 3px rgb(54 89 217 / 8%);
+}
+.mail-search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  color: #2e394e;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  font-size: 10px;
+}
+.mail-search input:disabled { color: #59647a; cursor: default; }
+.mail-search input::-webkit-search-cancel-button { display: none; }
+.mail-search button {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: #8c96a8;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.mail-search button:hover { background: #e8ebf1; }
+
+.modal-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(17 25 43 / 48%);
+}
+.confirm-dialog {
+  width: min(300px, 100%);
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e0e4ec;
+  border-radius: 8px;
+  box-shadow: 0 12px 36px rgb(18 27 48 / 20%);
+}
+.aggregation-dialog {
+  width: min(230px, 100%);
+  padding: 4px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 10px 28px rgb(31 43 70 / 18%);
+}
+.aggregation-options { display: grid; gap: 2px; }
+.aggregation-options button {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 6px 10px;
+  color: #566176;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 11px;
+}
+.aggregation-options button:hover:not(:disabled) { color: var(--primary); background: #eef2ff; }
+.aggregation-options button:disabled { opacity: 0.5; cursor: not-allowed; }
+.aggregation-options span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.confirm-dialog > p {
+  margin: 0;
+  color: #303a4d;
+  font-size: 14px;
+  font-weight: 600;
+}
+.confirm-dialog > small {
+  display: block;
+  overflow: hidden;
+  margin: 4px 0 15px;
+  color: #8a94a7;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.confirm-dialog__actions { display: flex; justify-content: flex-end; gap: 6px; }
+.secondary-button,
+.danger-button {
+  min-width: 56px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 5px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.secondary-button { color: #5e697e; background: #fff; border: 1px solid #dce1e9; }
+.secondary-button:hover { background: #f5f7fa; }
+.danger-button { color: #fff; background: #d94d4d; border: 0; }
+.modal-enter-active,
+.modal-leave-active { transition: opacity 0.18s ease; }
+.modal-enter-from,
+.modal-leave-to { opacity: 0; }
+
+@media (max-width: 1024px) {
+  .mail-header { gap: 12px; }
+}
+@media (max-width: 760px) {
+  .sidebar-shell {
+    position: absolute;
+    inset: 0;
+    z-index: 60;
+    display: block;
+    pointer-events: none;
+  }
+  .sidebar-shell.is-open { pointer-events: auto; }
+  .sidebar-scrim {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+    display: block;
+    padding: 0;
+    background: rgb(17 25 43 / 42%);
+    border: 0;
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 0.25s ease;
+  }
+  .sidebar-shell :deep(.mail-sidebar) {
+    width: min(62.4vw, 224px);
+    max-width: calc(100% - 48px);
+    height: 100%;
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 1;
+    flex: none;
+    visibility: hidden;
+    box-shadow: 18px 0 48px rgb(17 25 43 / 18%);
+    transform: translate3d(-100%, 0, 0);
+    transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 0.36s;
+    will-change: transform;
+  }
+  .sidebar-shell.is-open .sidebar-scrim { opacity: 1; }
+  .sidebar-shell.is-open :deep(.mail-sidebar) {
+    visibility: visible;
+    transform: translate3d(0, 0, 0);
+    transition-delay: 0s;
+  }
+  .folder-drawer-trigger.square-control { display: inline-grid; }
+  .mail-header { height: 48px; flex-basis: 48px; gap: 10px; }
+  .mail-search { width: min(320px, 100%); margin: 0; }
+}
+@media (max-width: 480px) {
+  .mail-header { height: 42px; flex-basis: 42px; padding-inline: 6px; }
+  .mail-search { width: 100%; gap: 5px; padding: 4px 7px; }
+  .mail-search input { font-size: 13px; }
+  .confirm-dialog { padding: 14px; }
+  .confirm-dialog__actions { flex-direction: row; }
+}

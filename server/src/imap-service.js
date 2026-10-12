@@ -39,7 +39,7 @@ export class ApiError extends Error {
   }
 }
 
-export function createImapClient(account) {
+export function createImapClient(account, options = {}) {
   return new ImapFlow({
     host: account.host,
     port: account.port,
@@ -50,9 +50,12 @@ export function createImapClient(account) {
       rejectUnauthorized: true,
       servername: account.host,
     },
-    socketTimeout: 30_000,
+    socketTimeout: options.socketTimeout ?? 30_000,
     greetingTimeout: 15_000,
     connectionTimeout: 15_000,
+    ...(options.autoIdleDelay !== undefined ? { autoIdleDelay: options.autoIdleDelay } : {}),
+    ...(options.maxIdleTime !== undefined ? { maxIdleTime: options.maxIdleTime } : {}),
+    ...(options.missingIdleCommand ? { missingIdleCommand: options.missingIdleCommand } : {}),
   });
 }
 
@@ -217,6 +220,40 @@ export async function listMessages(account, options = {}) {
       lock.release();
     }
   });
+}
+
+export async function getMailboxSnapshot(account, mailboxValue, limitValue = 20) {
+  const mailbox = cleanMailbox(mailboxValue);
+  const limit = Math.min(50, positiveInteger(limitValue, 20));
+
+  return withImap(account, async (client) => {
+    const lock = await client.getMailboxLock(mailbox, { readOnly: true });
+    try {
+      return getSelectedMailboxSnapshot(client, mailbox, limit);
+    } finally {
+      lock.release();
+    }
+  });
+}
+
+export async function getSelectedMailboxSnapshot(client, mailbox, limit = 20) {
+  const state = client.mailbox || {};
+  const total = state.exists || 0;
+  const start = Math.max(1, total - limit + 1);
+  const fetched = total > 0
+    ? await client.fetchAll(
+      `${start}:${total}`,
+      { uid: true, envelope: true, flags: true, internalDate: true, size: true },
+    )
+    : [];
+
+  fetched.sort(compareMessagesNewestFirst);
+  return {
+    mailbox,
+    uidValidity: String(state.uidValidity ?? ''),
+    messages: fetched.map(serializeMessageSummary),
+    total,
+  };
 }
 
 async function searchMessageUids(client, account, mailbox, query) {

@@ -32,10 +32,15 @@ XMail 是一个轻量、专注的自托管网页邮箱，面向希望自行掌�
 - 按发件人、收件人、主题与正文进行服务端搜索。
 - 按发件人或主题聚合邮件，聚合项统一置顶。
 - 已读、未读、星标、批量操作与自定义右键菜单。
+- IMAP IDLE 实时新邮件监听、账号角标、站内提示与浏览器桌面通知。
 - HTML/纯文本邮件阅读、内嵌图片与附件下载。
 - 默认拦截远程图片，降低追踪像素和阅读回执暴露。
 - 桌面端与移动端响应式界面。
 - 登录会话加密持久化，主动退出前持续保留。
+
+XMail 服务端会在页面保持打开时优先通过 IMAP IDLE 等待来信事件，再通过 SSE 实时通知浏览器；连接中断后会自动重连，并按 IMAP UID 校准期间遗漏的事件。若邮箱服务器没有声明 IDLE，标准 IMAP 无法主动推送，XMail 会仅为该账号启用每 10 秒一次的轻量 `STATUS` 兼容监听。桌面通知需要通过页面顶部的“开启新邮件提醒”授权，生产环境需使用 HTTPS。
+
+QQ、网易各端点的能力差异、完整事件链路、提醒规则和排查步骤见 [实时新邮件监听与提醒](docs/NEW_MAIL_NOTIFICATIONS.md)。
 
 ## 支持的邮箱
 
@@ -50,11 +55,11 @@ XMail 是一个轻量、专注的自托管网页邮箱，面向希望自行掌�
 
 ```mermaid
 flowchart LR
-    Browser[浏览器] -->|HTTPS| Cloudflare[Cloudflare Tunnel]
+    Browser[浏览器] -->|HTTPS / SSE| Cloudflare[Cloudflare Tunnel]
     Cloudflare --> Nginx[Nginx]
     Nginx -->|静态文件| Client[client/dist]
     Nginx -->|/api| Server[Node.js API]
-    Server -->|TLS 993| IMAP[网易 / QQ IMAP]
+    Server -->|TLS 993 / IDLE 或 STATUS| IMAP[网易 / QQ IMAP]
     Server -->|AES-256-GCM| Data[本机会话数据]
 ```
 
@@ -64,7 +69,8 @@ flowchart LR
 XMail/
 ├─ client/                 Vue 3 + Vite 客户端
 │  ├─ public/              favicon 等公开资源
-│  ├─ src/                 页面、组件与交互逻辑
+│  ├─ src/                 按 app / features / shared 分层的客户端源码
+│  ├─ README.md            客户端目录职责与开发约定
 │  ├─ package.json         客户端依赖与命令
 │  └─ vite.config.js
 ├─ server/                 Node.js + Express 服务端
@@ -124,7 +130,7 @@ npm ci --omit=dev
 npm start
 ```
 
-Windows、Nginx、Cloudflare Tunnel 和 Windows 服务的完整步骤见 [Windows 部署指南](docs/WINDOWS_DEPLOYMENT.md)。
+Windows、Nginx、Cloudflare Tunnel 和 Windows 服务的完整步骤见 [Windows 部署指南](docs/WINDOWS_DEPLOYMENT.md)。实时监听的服务商差异和故障排查见 [实时新邮件监听与提醒](docs/NEW_MAIL_NOTIFICATIONS.md)。
 
 ## 服务端配置
 
