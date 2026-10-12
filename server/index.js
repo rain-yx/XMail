@@ -6,6 +6,11 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import helmet from 'helmet';
 import {
+  createAggregationRule,
+  getAggregationRules,
+  removeAggregationRule,
+} from './aggregation-rules.js';
+import {
   ApiError,
   downloadAttachment,
   getMessage,
@@ -23,6 +28,7 @@ import {
   getAccount,
   getSession,
   listAccounts,
+  persistSessions,
   removeAccount,
 } from './session-store.js';
 
@@ -31,6 +37,7 @@ const rootDir = path.resolve(__dirname, '..');
 const app = express();
 const port = Number(process.env.PORT) || 3000;
 const sessionCookie = 'xmail_session';
+const persistentCookieAge = 10 * 365 * 24 * 60 * 60 * 1000;
 const loginAttempts = new Map();
 
 setInterval(() => {
@@ -113,6 +120,37 @@ app.get('/api/mailboxes', requireSession, requireAccount, asyncHandler(async (re
   res.json({ mailboxes });
 }));
 
+app.get('/api/aggregation-rules', requireSession, requireAccount, (req, res) => {
+  res.json({ rules: getAggregationRules(req.account) });
+});
+
+app.post('/api/aggregation-rules', requireSession, requireAccount, (req, res, next) => {
+  const type = String(req.body?.type || '').trim().toLowerCase();
+  const value = String(req.body?.value || '').trim();
+  if (!['sender', 'subject'].includes(type) || !value || value.length > 998) {
+    return next(new ApiError(400, '聚合条件无效。', 'INVALID_AGGREGATION_RULE'));
+  }
+
+  const result = createAggregationRule(req.account, {
+    type,
+    value,
+    label: req.body?.label,
+    mailbox: req.body?.mailbox,
+    uid: req.body?.uid,
+  });
+  if (!result) return next(new ApiError(400, '聚合条件无效。', 'INVALID_AGGREGATION_RULE'));
+  persistSessions();
+  res.status(result.created ? 201 : 200).json(result);
+});
+
+app.delete('/api/aggregation-rules/:ruleId', requireSession, requireAccount, (req, res, next) => {
+  if (!removeAggregationRule(req.account, req.params.ruleId)) {
+    return next(new ApiError(404, '聚合规则不存在。', 'AGGREGATION_RULE_NOT_FOUND'));
+  }
+  persistSessions();
+  res.status(204).end();
+});
+
 app.get('/api/messages', requireSession, requireAccount, asyncHandler(async (req, res) => {
   const result = await listMessages(req.account, req.query);
   res.json(result);
@@ -192,10 +230,12 @@ app.listen(port, '0.0.0.0', () => {
   console.log(`XMail server is running at http://localhost:${port}`);
 });
 
-function requireSession(req, _res, next) {
-  const session = getSession(req.cookies?.[sessionCookie]);
+function requireSession(req, res, next) {
+  const sessionId = req.cookies?.[sessionCookie];
+  const session = getSession(sessionId);
   if (!session) return next(new ApiError(401, '登录状态已失效，请重新登录。', 'SESSION_EXPIRED'));
   req.session = session;
+  res.cookie(sessionCookie, sessionId, cookieOptions(req));
   next();
 }
 
@@ -229,7 +269,7 @@ function cookieOptions(req) {
     sameSite: 'strict',
     secure: process.env.NODE_ENV === 'production' || req.secure,
     path: '/',
-    maxAge: Number(process.env.SESSION_TTL_MS) || 24 * 60 * 60 * 1000,
+    maxAge: persistentCookieAge,
   };
 }
 

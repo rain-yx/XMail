@@ -40,11 +40,22 @@ export const api = {
   removeAccount: (accountId) => request(`/api/accounts/${encodeURIComponent(accountId)}`, { method: 'DELETE' }),
   logoutAll: () => request('/api/auth/logout', { method: 'POST' }),
   mailboxes: (accountId) => request('/api/mailboxes', {}, accountId),
-  messages: (accountId, { mailbox, page = 1, pageSize = 40, query = '' }) => {
+  messages: (accountId, { mailbox, page = 1, pageSize = 40, query = '', groupId = '' }) => {
     const params = new URLSearchParams({ mailbox, page, pageSize });
     if (query) params.set('query', query);
+    if (groupId) params.set('groupId', groupId);
     return request(`/api/messages?${params}`, {}, accountId);
   },
+  aggregationRules: (accountId) => request('/api/aggregation-rules', {}, accountId),
+  createAggregationRule: (accountId, rule) => request('/api/aggregation-rules', {
+    method: 'POST',
+    body: JSON.stringify(rule),
+  }, accountId),
+  deleteAggregationRule: (accountId, ruleId) => request(
+    `/api/aggregation-rules/${encodeURIComponent(ruleId)}`,
+    { method: 'DELETE' },
+    accountId,
+  ),
   message: (accountId, mailbox, uid) => {
     const params = new URLSearchParams({ mailbox });
     return request(`/api/messages/${uid}?${params}`, {}, accountId);

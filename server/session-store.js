@@ -1,18 +1,23 @@
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const sessions = new Map();
-const DEFAULT_TTL = 24 * 60 * 60 * 1000;
+const moduleDirectory = path.dirname(fileURLToPath(import.meta.url));
+const dataDirectory = process.env.XMAIL_DATA_DIR
+  ? path.resolve(process.env.XMAIL_DATA_DIR)
+  : path.resolve(moduleDirectory, '..', '.xmail-data');
+const sessionFile = path.join(dataDirectory, 'sessions.enc');
+const keyFile = path.join(dataDirectory, 'session.key');
+const persistenceEnabled = !process.env.NODE_TEST_CONTEXT;
 
-function ttl() {
-  const configured = Number(process.env.SESSION_TTL_MS);
-  return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_TTL;
-}
+restoreSessions();
 
 export function createSession() {
   const id = crypto.randomBytes(32).toString('base64url');
   sessions.set(id, {
     accounts: new Map(),
-    expiresAt: Date.now() + ttl(),
   });
   return id;
 }
@@ -21,19 +26,15 @@ export function getSession(id) {
   if (!id) return null;
   const session = sessions.get(id);
   if (!session) return null;
-  if (session.expiresAt <= Date.now()) {
-    sessions.delete(id);
-    return null;
-  }
-
-  session.expiresAt = Date.now() + ttl();
   return session;
 }
 
 export function addAccount(session, account) {
   const existing = [...session.accounts.entries()].find(([, item]) => item.email === account.email);
   const accountId = existing?.[0] || crypto.randomUUID();
+  account.aggregationRules = existing?.[1]?.aggregationRules || account.aggregationRules || [];
   session.accounts.set(accountId, account);
+  persistSessions();
   return accountId;
 }
 
@@ -43,7 +44,9 @@ export function getAccount(session, accountId) {
 }
 
 export function removeAccount(session, accountId) {
-  return Boolean(session?.accounts.delete(accountId));
+  const removed = Boolean(session?.accounts.delete(accountId));
+  if (removed) persistSessions();
+  return removed;
 }
 
 export function listAccounts(session) {
@@ -57,18 +60,69 @@ export function listAccounts(session) {
 }
 
 export function deleteSession(id) {
-  if (id) sessions.delete(id);
-}
-
-export function clearExpiredSessions() {
-  const now = Date.now();
-  for (const [id, session] of sessions) {
-    if (session.expiresAt <= now) sessions.delete(id);
-  }
+  if (id && sessions.delete(id)) persistSessions();
 }
 
 export function sessionCount() {
   return sessions.size;
 }
 
-setInterval(clearExpiredSessions, 15 * 60 * 1000).unref();
+export function persistSessions() {
+  if (!persistenceEnabled) return;
+  try {
+    fs.mkdirSync(dataDirectory, { recursive: true });
+    const key = getEncryptionKey(true);
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+    const payload = JSON.stringify([...sessions.entries()].map(([id, session]) => ({
+      id,
+      accounts: [...session.accounts.entries()],
+    })));
+    const encrypted = Buffer.concat([cipher.update(payload, 'utf8'), cipher.final()]);
+    const authTag = cipher.getAuthTag();
+    const output = Buffer.concat([Buffer.from('XMAIL1'), iv, authTag, encrypted]);
+    fs.writeFileSync(sessionFile, output, { mode: 0o600 });
+  } catch (error) {
+    console.error('Unable to persist XMail sessions:', error.message);
+  }
+}
+
+function restoreSessions() {
+  if (!persistenceEnabled || !fs.existsSync(sessionFile)) return;
+  try {
+    const input = fs.readFileSync(sessionFile);
+    if (input.subarray(0, 6).toString() !== 'XMAIL1') throw new Error('invalid session file');
+    const key = getEncryptionKey(false);
+    if (!key) throw new Error('session encryption key is missing');
+    const iv = input.subarray(6, 18);
+    const authTag = input.subarray(18, 34);
+    const encrypted = input.subarray(34);
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(authTag);
+    const payload = Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8');
+    const storedSessions = JSON.parse(payload);
+    if (!Array.isArray(storedSessions)) throw new Error('invalid session payload');
+    for (const stored of storedSessions) {
+      if (!stored?.id || !Array.isArray(stored.accounts)) continue;
+      sessions.set(stored.id, { accounts: new Map(stored.accounts) });
+    }
+  } catch (error) {
+    console.error('Unable to restore XMail sessions:', error.message);
+  }
+}
+
+function getEncryptionKey(createIfMissing) {
+  if (process.env.SESSION_SECRET) {
+    return crypto.createHash('sha256').update(process.env.SESSION_SECRET).digest();
+  }
+  if (fs.existsSync(keyFile)) {
+    const key = fs.readFileSync(keyFile);
+    if (key.length === 32) return key;
+    throw new Error('session key has an invalid length');
+  }
+  if (!createIfMissing) return null;
+  fs.mkdirSync(dataDirectory, { recursive: true });
+  const key = crypto.randomBytes(32);
+  fs.writeFileSync(keyFile, key, { mode: 0o600, flag: 'wx' });
+  return key;
+}

@@ -7,4 +7,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      SESSION_TTL_MS: 86400000
+    volumes:
+      - xmail-data:/app/.xmail-data
+
+volumes:
+  xmail-data:

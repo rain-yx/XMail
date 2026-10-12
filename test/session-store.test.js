@@ -13,6 +13,7 @@ import {
 test('keeps multiple mailbox accounts isolated in one browser session', () => {
   const sessionId = createSession();
   const session = getSession(sessionId);
+  assert.equal('expiresAt' in session, false);
   const netease = { email: 'one@163.com', provider: '网易 163 邮箱', family: 'netease', authorizationCode: 'secret-one' };
   const qq = { email: 'two@qq.com', provider: 'QQ 邮箱', family: 'qq', authorizationCode: 'secret-two' };
 

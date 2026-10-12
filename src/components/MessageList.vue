@@ -1,16 +1,23 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
 import {
+  ArrowLeft,
+  ArrowUp,
+  AtSign,
+  CaseSensitive,
   Inbox,
+  Layers3,
   Mail,
   MailOpen,
   RefreshCw,
   SearchX,
   Star,
   Trash2,
+  X,
 } from 'lucide-vue-next';
 import { useLenisContainer } from '../useLenis.js';
 import { formatMailDate, getVisibleRange } from '../virtual-list.js';
+import ContextMenu from './ContextMenu.vue';
 
 const props = defineProps({
   messages: { type: Array, default: () => [] },
@@ -21,6 +28,7 @@ const props = defineProps({
   query: { type: String, default: '' },
   hasMore: Boolean,
   trashAvailable: Boolean,
+  group: { type: Object, default: null },
 });
 
 const emit = defineEmits([
@@ -32,6 +40,13 @@ const emit = defineEmits([
   'mark-seen',
   'delete',
   'load-more',
+  'open-group',
+  'back-group',
+  'aggregate',
+  'aggregate-as',
+  'remove-group',
+  'set-seen',
+  'delete-one',
 ]);
 
 const BUFFER_ROWS = 5;
@@ -41,9 +56,69 @@ const scrollTop = ref(0);
 const viewportHeight = ref(0);
 const rowHeight = ref(35);
 const footerHeight = ref(44);
+const contextMenuRef = ref(null);
+const contextTarget = ref(null);
 let lastEndRequestLength = -1;
 
 const showFooter = computed(() => props.loadingMore || !props.hasMore);
+const showBackToTop = computed(() => scrollTop.value > Math.max(240, rowHeight.value * 6));
+const selectableMessages = computed(() => props.messages.filter((message) => message.kind !== 'group'));
+const contextRowKey = computed(() => (
+  contextTarget.value ? rowKey(contextTarget.value) : ''
+));
+const contextMenuItems = computed(() => {
+  const message = contextTarget.value;
+  if (!message) return [];
+  if (message.kind === 'group') {
+    return [
+      { id: 'open-group', label: `打开聚合（${message.count} 封）`, icon: Layers3 },
+      { id: 'group-separator', type: 'separator' },
+      { id: 'remove-group', label: '取消聚合', icon: X, danger: true },
+    ];
+  }
+
+  return [
+    { id: 'open', label: '打开邮件', icon: MailOpen, shortcut: 'Enter' },
+    { id: 'message-separator-1', type: 'separator' },
+    {
+      id: 'set-seen',
+      label: message.seen ? '标为未读' : '标为已读',
+      icon: message.seen ? Mail : MailOpen,
+    },
+    {
+      id: 'toggle-star',
+      label: message.flagged ? '取消星标' : '添加星标',
+      icon: Star,
+    },
+    {
+      id: 'aggregate-menu',
+      label: '聚合此类邮件',
+      icon: Layers3,
+      children: [
+        {
+          id: 'aggregate-sender',
+          label: '按发件人聚合',
+          icon: AtSign,
+          disabled: !message.from?.[0]?.address,
+        },
+        {
+          id: 'aggregate-subject',
+          label: '按主题聚合',
+          icon: CaseSensitive,
+          disabled: !message.subject,
+        },
+      ],
+    },
+    { id: 'message-separator-2', type: 'separator', hidden: !props.trashAvailable },
+    {
+      id: 'delete-one',
+      label: '移至已删除',
+      icon: Trash2,
+      danger: true,
+      hidden: !props.trashAvailable,
+    },
+  ];
+});
 const rowsHeight = computed(() => props.messages.length * rowHeight.value);
 const totalHeight = computed(() => rowsHeight.value + (showFooter.value ? footerHeight.value : 0));
 const visibleRows = computed(() => {
@@ -82,6 +157,7 @@ watch(() => props.messages.length, async () => {
 
 watch(() => props.loading, (loading) => {
   if (!loading) return;
+  contextMenuRef.value?.close();
   lastEndRequestLength = -1;
   scrollTop.value = 0;
   lenis.scrollTo(0, { immediate: true });
@@ -131,16 +207,77 @@ function sender(message) {
 function isSelected(uid) {
   return props.selected.has(uid);
 }
+
+function rowKey(message) {
+  return message.kind === 'group' ? `group:${message.groupId}` : `message:${message.uid}`;
+}
+
+function openRow(message) {
+  emit(message.kind === 'group' ? 'open-group' : 'open', message);
+}
+
+async function openContextMenu(event, message) {
+  contextTarget.value = message;
+  await nextTick();
+  contextMenuRef.value?.open(event);
+}
+
+function handleContextAction(item) {
+  const message = contextTarget.value;
+  if (!message) return;
+  switch (item.id) {
+    case 'open':
+      emit('open', message);
+      break;
+    case 'open-group':
+      emit('open-group', message);
+      break;
+    case 'set-seen':
+      emit('set-seen', message, !message.seen);
+      break;
+    case 'toggle-star':
+      emit('toggle-star', message);
+      break;
+    case 'aggregate-sender':
+      emit('aggregate-as', message, 'sender');
+      break;
+    case 'aggregate-subject':
+      emit('aggregate-as', message, 'subject');
+      break;
+    case 'delete-one':
+      emit('delete-one', message);
+      break;
+    case 'remove-group':
+      emit('remove-group', message);
+      break;
+    default:
+      break;
+  }
+}
+
+function scrollToTop() {
+  lenis.scrollTo(0, { duration: 0.45 });
+}
 </script>
 
 <template>
   <section class="message-list" aria-label="邮件列表">
     <div class="list-toolbar">
+      <button
+        v-if="group"
+        type="button"
+        class="group-back-button"
+        title="返回聚合列表"
+        @click="emit('back-group')"
+      >
+        <ArrowLeft :size="15" />
+        <span>{{ group.label }}</span>
+      </button>
       <label class="native-checkbox" title="全选已加载邮件">
         <input
           type="checkbox"
-          :checked="messages.length > 0 && selected.size === messages.length"
-          :indeterminate="selected.size > 0 && selected.size < messages.length"
+          :checked="selectableMessages.length > 0 && selected.size === selectableMessages.length"
+          :indeterminate="selected.size > 0 && selected.size < selectableMessages.length"
           aria-label="全选已加载邮件"
           @change="emit('toggle-all')"
         />
@@ -181,39 +318,70 @@ function isSelected(uid) {
         <div ref="contentRef" class="virtual-content" :style="{ height: `${totalHeight}px` }">
           <article
             v-for="row in visibleRows"
-            :key="row.message.uid"
+            :key="rowKey(row.message)"
             class="message-row"
             :class="{
+              'message-row--group': row.message.kind === 'group',
               'message-row--unread': !row.message.seen,
               'message-row--selected': isSelected(row.message.uid),
+              'message-row--context': rowKey(row.message) === contextRowKey,
             }"
             :style="{ transform: `translateY(${row.index * rowHeight}px)` }"
             tabindex="0"
-            @click="emit('open', row.message)"
-            @keydown.enter="emit('open', row.message)"
+            @click="openRow(row.message)"
+            @keydown.enter="openRow(row.message)"
+            @contextmenu.prevent.stop="openContextMenu($event, row.message)"
           >
-            <label class="native-checkbox" title="选择邮件" @click.stop>
-              <input
-                type="checkbox"
-                :checked="isSelected(row.message.uid)"
-                aria-label="选择邮件"
-                @change="emit('toggle-select', row.message.uid)"
-              />
-            </label>
-            <button
-              type="button"
-              class="square-control star-button"
-              :class="{ 'is-active': row.message.flagged }"
-              :aria-label="row.message.flagged ? '取消星标' : '添加星标'"
-              @click.stop="emit('toggle-star', row.message)"
-            >
-              <Star :size="14" :fill="row.message.flagged ? 'currentColor' : 'none'" />
-            </button>
+            <template v-if="row.message.kind === 'group'">
+              <span class="group-row-marker" aria-hidden="true"><Layers3 :size="17" /></span>
+            </template>
+            <template v-else>
+              <label class="native-checkbox" title="选择邮件" @click.stop>
+                <input
+                  type="checkbox"
+                  :checked="isSelected(row.message.uid)"
+                  aria-label="选择邮件"
+                  @change="emit('toggle-select', row.message.uid)"
+                />
+              </label>
+              <button
+                type="button"
+                class="square-control star-button"
+                :class="{ 'is-active': row.message.flagged }"
+                :aria-label="row.message.flagged ? '取消星标' : '添加星标'"
+                @click.stop="emit('toggle-star', row.message)"
+              >
+                <Star :size="14" :fill="row.message.flagged ? 'currentColor' : 'none'" />
+              </button>
+              <button
+                type="button"
+                class="square-control aggregate-button"
+                aria-label="聚合此类邮件"
+                title="聚合此类邮件"
+                @click.stop="emit('aggregate', row.message)"
+              >
+                <Layers3 :size="14" />
+              </button>
+            </template>
             <div class="message-copy">
-              <strong>{{ sender(row.message) }}</strong>
-              <p>{{ row.message.subject || '（无主题）' }}</p>
+              <strong>{{ row.message.kind === 'group' ? row.message.label : sender(row.message) }}</strong>
+              <p>{{ row.message.kind === 'group' ? `最新：${row.message.latestSubject}` : (row.message.subject || '（无主题）') }}</p>
+              <span v-if="row.message.kind === 'group'" class="group-count">
+                {{ row.message.count }} 封
+                <em v-if="row.message.unread">{{ row.message.unread }} 未读</em>
+              </span>
               <time :datetime="row.message.date">{{ formatMailDate(row.message.date) }}</time>
             </div>
+            <button
+              v-if="row.message.kind === 'group'"
+              type="button"
+              class="square-control group-remove-button"
+              aria-label="取消聚合"
+              title="取消聚合"
+              @click.stop="emit('remove-group', row.message)"
+            >
+              <X :size="14" />
+            </button>
           </article>
           <div
             v-if="showFooter"
@@ -225,6 +393,25 @@ function isSelected(uid) {
           </div>
         </div>
       </div>
+      <Transition name="back-to-top">
+        <button
+          v-if="showBackToTop"
+          type="button"
+          class="back-to-top-button"
+          aria-label="返回列表顶部"
+          title="返回顶部"
+          @click="scrollToTop"
+        >
+          <ArrowUp :size="17" />
+        </button>
+      </Transition>
     </div>
+    <ContextMenu
+      ref="contextMenuRef"
+      :items="contextMenuItems"
+      aria-label="邮件操作菜单"
+      @action="handleContextAction"
+      @close="contextTarget = null"
+    />
   </section>
 </template>
