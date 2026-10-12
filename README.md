@@ -1,105 +1,155 @@
-# XMail
+<div align="center">
+  <img src="client/public/favicon.ico" width="88" height="88" alt="XMail logo" />
+  <h1>XMail</h1>
+  <p>轻量、私有、自托管的网易与 QQ 网页邮箱。</p>
+  <p>
+    <img src="https://img.shields.io/badge/Vue-3-42b883?logo=vuedotjs&logoColor=white" alt="Vue 3" />
+    <img src="https://img.shields.io/badge/Node.js-%E2%89%A520.19-339933?logo=nodedotjs&logoColor=white" alt="Node.js 20.19+" />
+    <img src="https://img.shields.io/badge/IMAP-TLS%20993-4565d8" alt="IMAP TLS 993" />
+    <img src="https://img.shields.io/badge/Deployment-Windows%20%2B%20Nginx-009639?logo=nginx&logoColor=white" alt="Windows and Nginx" />
+  </p>
+</div>
 
-一个轻量、自托管的网易与 QQ 网页邮箱。浏览器访问 Vue 3 界面，由 Node.js 服务通过 TLS IMAP 直接连接邮箱，不依赖网易邮箱大师等桌面客户端或第三方邮件聚合服务。
+XMail 面向希望自行掌控邮箱访问凭据与部署环境的用户。浏览器只访问自己的 XMail 服务，服务端通过 TLS IMAP 连接网易或 QQ 邮箱，不依赖桌面客户端和第三方邮件聚合平台。
+
+## 功能特性
+
+- 网易与 QQ 双账号标签页，账号状态互相隔离。
+- 收件箱、已发送、草稿箱、垃圾箱等 IMAP 文件夹浏览。
+- 邮件按日期从新到旧排列，支持增量加载和虚拟列表。
+- 按发件人、收件人、主题与正文进行服务端搜索。
+- 按发件人或主题聚合邮件，聚合项统一置顶。
+- 已读、未读、星标、批量操作与自定义右键菜单。
+- HTML/纯文本邮件阅读、内嵌图片与附件下载。
+- 默认拦截远程图片，降低追踪像素和阅读回执暴露。
+- 桌面端与移动端响应式界面。
+- 登录会话加密持久化，主动退出前持续保留。
 
 ## 支持的邮箱
 
-- 网易：`163.com`、`126.com`、`yeah.net`、`vip.163.com`、`vip.126.com`、`188.com`
-- 腾讯：`qq.com`、`foxmail.com`
+| 邮箱 | 支持域名 | IMAP 服务 |
+| --- | --- | --- |
+| 网易 | `163.com`、`126.com`、`yeah.net`、`vip.163.com`、`vip.126.com`、`188.com` | 对应网易官方 TLS 993 服务 |
+| 腾讯 | `qq.com`、`foxmail.com` | `imap.qq.com:993` |
 
-项目只接受以上白名单域名，并固定连接各服务商的可信 IMAP TLS 993 地址。
+登录前需要先在邮箱网页端开启 IMAP，并生成客户端授权码或应用专用密码。请勿填写邮箱网页登录密码。
 
-## 功能
+## 系统架构
 
-- 网易和 QQ 两个固定标签，标签内独立登录、独立文件夹和独立邮件状态
-- 登录完成后原地切换为收件箱，切换标签无需重复登录
-- 原生 Vue / HTML / CSS 交互组件，不依赖 UI 组件库
-- 自研虚拟列表，只渲染可视区域及前后各 5 行缓冲，离屏节点自动销毁
-- 滚动到底自动按 40 封一页加载，不一次性读取全部邮件
-- 服务端普通列表也只按当前页的 IMAP 序号区间读取邮件摘要
-- Lenis 接管登录页、邮件列表、文件夹和邮件详情滚动
-- 文件夹与未读数、发件人/主题/正文搜索
-- 阅读邮件、星标、标为已读/未读、批量移至已删除
-- HTML/纯文本邮件、内嵌图片和附件下载
-- 默认拦截邮件中的远程图片，减少阅读回执和追踪像素暴露
-- 响应式桌面和移动端界面
+```mermaid
+flowchart LR
+    Browser[浏览器] -->|HTTPS| Cloudflare[Cloudflare Tunnel]
+    Cloudflare --> Nginx[Nginx]
+    Nginx -->|静态文件| Client[client/dist]
+    Nginx -->|/api| Server[Node.js API]
+    Server -->|TLS 993| IMAP[网易 / QQ IMAP]
+    Server -->|AES-256-GCM| Data[本机会话数据]
+```
 
-## 本地运行
+客户端与服务端完全独立：
 
-需要 Node.js 20.19 或更高版本。
+```text
+XMail/
+├─ client/                 Vue 3 + Vite 客户端
+│  ├─ public/              favicon 等公开资源
+│  ├─ src/                 页面、组件与交互逻辑
+│  ├─ package.json         客户端依赖与命令
+│  └─ vite.config.js
+├─ server/                 Node.js + Express 服务端
+│  ├─ src/                 API、IMAP、搜索与会话逻辑
+│  ├─ data/                本机加密会话数据，不提交 Git
+│  ├─ .env.example         服务端环境变量示例
+│  └─ package.json         服务端依赖与命令
+├─ docs/                   部署等扩展文档
+├─ CONTRIBUTING.md         贡献指南
+├─ SECURITY.md             安全策略
+└─ CHANGELOG.md            版本记录
+```
+
+生产环境由 Nginx 托管 `client/dist`，并将同源 `/api/` 请求反向代理到 Node.js `3000` 端口。服务端不会读取或托管客户端文件。
+
+## 快速开始
+
+环境要求：
+
+- Node.js 20.19 或更高版本
+- 可访问邮箱 IMAP TLS 993 端口
+
+启动服务端：
 
 ```powershell
+Set-Location server
 npm install
 Copy-Item .env.example .env
 npm run dev
 ```
 
-开发页面位于 <http://localhost:5173>，Vite 会把 `/api` 代理到 <http://localhost:3000>。
-
-生产运行：
+打开另一个终端启动客户端：
 
 ```powershell
+Set-Location client
+npm install
+npm run dev
+```
+
+访问 <http://localhost:5173>。开发服务器会将 `/api` 代理到 <http://127.0.0.1:3000>。
+
+## 生产构建
+
+```powershell
+Set-Location client
+npm ci
 npm run build
-$env:NODE_ENV="production"
+```
+
+构建结果位于 `client/dist/`。服务端可独立安装并启动：
+
+```powershell
+Set-Location server
+Copy-Item .env.example .env
+npm ci --omit=dev
 npm start
 ```
 
-## 登录前准备
+Windows、Nginx、Cloudflare Tunnel 和 Windows 服务的完整步骤见 [Windows 部署指南](docs/WINDOWS_DEPLOYMENT.md)。
 
-1. 登录网易或 QQ 邮箱网页端，进入账号或邮箱设置。
-2. 开启 IMAP 服务，并按服务商提示生成客户端授权码。
-3. 在 XMail 中填写完整邮箱地址和客户端授权码，不要填写网页登录密码。
-
-服务商可能根据账号状态要求短信验证或安全检查，具体以邮箱设置页提示为准。
-
-## 使用 Docker
-
-```bash
-docker compose up -d --build
-```
-
-Docker Compose 会把加密登录会话保存在 `xmail-data` 持久卷中，重新构建容器后仍可恢复登录状态。
-
-容器访问地址为 <http://localhost:3000>，部署机器必须允许出站访问邮箱服务的 TCP 993。
-
-## 安全设计
-
-- 客户端授权码只保存在 Node.js 进程内存中。
-- 浏览器仅持有 `HttpOnly`、`SameSite=Strict` 的随机会话 Cookie。
-- 一个浏览器会话可以包含网易和 QQ 两个账号，所有邮件 API 都按不可预测的账号 ID 隔离。
-- 登录会话不会按时间自动过期；凭据使用 AES-256-GCM 加密保存在本机，主动退出时清除对应会话。
-- IMAP 固定使用 TLS 993 并校验证书，前端不能提交任意 IMAP 主机。
-- 邮件 HTML 在显示前经过 DOMPurify 清理，并移除可能加载远程资源的样式。
-- 登录入口有进程内频率限制。
-
-公网部署必须使用 HTTPS，并限制实例访问范围。当前使用单机加密会话文件，不适合直接做多副本部署；横向扩容时应使用加密的共享会话存储。
-
-## 配置变量
+## 服务端配置
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
-| `PORT` | `3000` | Node 服务监听端口 |
-| `SESSION_SECRET` | 自动生成本机密钥 | 持久会话加密密钥；容器部署建议显式配置并长期保持不变 |
-| `XMAIL_DATA_DIR` | `.xmail-data` | 加密会话及本机密钥保存目录 |
-| `NODE_ENV` | `development` | 生产模式托管 `dist` 并启用 Secure Cookie |
+| `PORT` | `3000` | Node API 监听端口 |
+| `SESSION_SECRET` | 自动生成本机密钥 | 会话加密密钥；显式配置后必须长期保持不变 |
+| `XMAIL_DATA_DIR` | `server/data` | 加密会话与本机密钥目录 |
+| `NODE_ENV` | `development` | 设为 `production` 时启用 Secure Cookie |
 
-## 常用命令
+生产环境示例：
 
-```bash
-npm test       # 运行单元测试
-npm run build  # 构建 Vue 生产包
-npm start      # 启动 Node 服务
+```env
+NODE_ENV=production
+PORT=3000
+SESSION_SECRET=replace-with-a-long-stable-random-secret
+XMAIL_DATA_DIR=D:/Web/XMailData
 ```
 
-## 项目结构
+## 安全说明
 
-```text
-src/                              Vue 3 原生组件前端
-src/components/AccountWorkspace  单个标签内的独立邮箱状态
-src/components/MessageList       原生虚拟滚动与增量加载
-src/useLenis.js                   Lenis 滚动容器适配
-server/index.js                   Express API 与多账号隔离
-server/imap-service.js            IMAP、邮件解析与附件处理
-server/providers.js               网易与 QQ 域名白名单
-test/                             Node.js 单元测试
-```
+- 浏览器只保存 `HttpOnly`、`SameSite=Strict` 的随机会话 Cookie。
+- 邮箱授权码使用 AES-256-GCM 加密后保存在服务端数据目录。
+- IMAP 主机由邮箱白名单固定，客户端无法提交任意服务器地址。
+- HTML 邮件展示前经过 DOMPurify 清理，并默认阻止远程资源。
+- 登录接口包含进程内频率限制。
+- 当前会话存储为单机加密文件，不适合多个服务端实例同时写入。
+
+公网部署必须使用 HTTPS。不要提交 `.env`、`server/data`、授权码、会话文件或真实邮件内容。安全问题请按照 [安全策略](SECURITY.md) 私下报告。
+
+## 参与贡献
+
+欢迎提交缺陷修复、兼容性改进、界面优化与文档更新。开始前请阅读 [贡献指南](CONTRIBUTING.md) 和 [行为准则](CODE_OF_CONDUCT.md)。
+
+## 版本记录
+
+项目变更记录见 [CHANGELOG.md](CHANGELOG.md)。
+
+## 许可证
+
+仓库公开前需要添加明确的开源许可证。在许可证文件加入前，代码默认保留全部权利，不应视为已经获得复制、修改或分发授权。

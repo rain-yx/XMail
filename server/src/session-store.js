@@ -7,7 +7,7 @@ const sessions = new Map();
 const moduleDirectory = path.dirname(fileURLToPath(import.meta.url));
 const dataDirectory = process.env.XMAIL_DATA_DIR
   ? path.resolve(process.env.XMAIL_DATA_DIR)
-  : path.resolve(moduleDirectory, '..', '.xmail-data');
+  : path.resolve(moduleDirectory, '..', 'data');
 const sessionFile = path.join(dataDirectory, 'sessions.enc');
 const keyFile = path.join(dataDirectory, 'session.key');
 const persistenceEnabled = !process.env.NODE_TEST_CONTEXT;

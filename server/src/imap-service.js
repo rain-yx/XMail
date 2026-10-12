@@ -1,6 +1,6 @@
 import { ImapFlow } from 'imapflow';
 import { simpleParser } from 'mailparser';
-import { matchesSearchText, tokenizeSearchQuery } from '../shared/search-query.js';
+import { matchesSearchText, tokenizeSearchQuery } from './search-query.js';
 import {
   buildAggregatedMessageList,
   findAggregationRule,

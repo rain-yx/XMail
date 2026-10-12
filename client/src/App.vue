@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref, watchEffect} from "vue";
 import {Inbox, Mail, ShieldCheck} from "lucide-vue-next";
 import {api} from "./api.js";
 import {notify} from "./toast.js";
@@ -13,6 +13,12 @@ const tabs = ref([
 ]);
 const activeTab = ref("netease");
 const booting = ref(true);
+const currentTab = computed(() => tabs.value.find((tab) => tab.id === activeTab.value));
+
+watchEffect(() => {
+  const tab = currentTab.value;
+  document.title = `XMail · ${tab?.account?.email || tab?.label || "邮箱"}`;
+});
 
 onMounted(async () => {
   try {

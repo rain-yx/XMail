@@ -1,7 +1,5 @@
 import 'dotenv/config';
 
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import cookieParser from 'cookie-parser';
 import express from 'express';
 import helmet from 'helmet';
@@ -32,8 +30,6 @@ import {
   removeAccount,
 } from './session-store.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootDir = path.resolve(__dirname, '..');
 const app = express();
 const port = Number(process.env.PORT) || 3000;
 const sessionCookie = 'xmail_session';
@@ -198,13 +194,6 @@ app.post('/api/messages/move', requireSession, requireAccount, asyncHandler(asyn
   );
   res.json(result);
 }));
-
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(rootDir, 'dist'), { index: false, maxAge: '1h' }));
-  app.get('*splat', (_req, res) => {
-    res.sendFile(path.join(rootDir, 'dist', 'index.html'));
-  });
-}
 
 app.use((req, _res, next) => {
   next(new ApiError(404, `接口不存在：${req.method} ${req.path}`, 'NOT_FOUND'));
