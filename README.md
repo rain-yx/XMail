@@ -9,7 +9,7 @@
     <img src="https://img.shields.io/badge/Deployment-Windows%20%2B%20Nginx-009639?logo=nginx&logoColor=white" alt="Windows and Nginx" />
     <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License" />
   </p>
-  <p><a href="https://ayurain.top/"><strong>在线预览：ayurain.top</strong></a></p>
+  <p>在线预览：<a href="https://ayurain.top/"><strong>ayurain.top</strong></a></p>
 </div>
 
 XMail 是一个轻量、专注的自托管网页邮箱，面向希望自行掌控邮箱访问凭据与部署环境的用户。项目精简了传统网页邮箱中较为臃肿的功能与复杂入口，将体验集中在邮件浏览、搜索、聚合和常用管理操作上，减少不必要的页面负担与交互等待，让日常收信和查找邮件更加清爽、流畅。
