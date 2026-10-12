@@ -7,6 +7,7 @@
     <img src="https://img.shields.io/badge/Node.js-%E2%89%A520.19-339933?logo=nodedotjs&logoColor=white" alt="Node.js 20.19+" />
     <img src="https://img.shields.io/badge/IMAP-TLS%20993-4565d8" alt="IMAP TLS 993" />
     <img src="https://img.shields.io/badge/Deployment-Windows%20%2B%20Nginx-009639?logo=nginx&logoColor=white" alt="Windows and Nginx" />
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License" />
   </p>
 </div>
 
@@ -63,7 +64,8 @@ XMail/
 ├─ docs/                   部署等扩展文档
 ├─ CONTRIBUTING.md         贡献指南
 ├─ SECURITY.md             安全策略
-└─ CHANGELOG.md            版本记录
+├─ CHANGELOG.md            版本记录
+└─ LICENSE                 MIT 许可证
 ```
 
 生产环境由 Nginx 托管 `client/dist`，并将同源 `/api/` 请求反向代理到 Node.js `3000` 端口。服务端不会读取或托管客户端文件。
@@ -152,4 +154,4 @@ XMAIL_DATA_DIR=D:/Web/XMailData
 
 ## 许可证
 
-仓库公开前需要添加明确的开源许可证。在许可证文件加入前，代码默认保留全部权利，不应视为已经获得复制、修改或分发授权。
+本项目使用 [MIT License](LICENSE) 开源。你可以使用、复制、修改和分发本项目，但需要保留原始版权与许可声明。
