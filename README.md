@@ -9,9 +9,18 @@
     <img src="https://img.shields.io/badge/Deployment-Windows%20%2B%20Nginx-009639?logo=nginx&logoColor=white" alt="Windows and Nginx" />
     <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License" />
   </p>
+  <p><a href="https://ayurain.top/"><strong>在线预览：ayurain.top</strong></a></p>
 </div>
 
 XMail 面向希望自行掌控邮箱访问凭据与部署环境的用户。浏览器只访问自己的 XMail 服务，服务端通过 TLS IMAP 连接网易或 QQ 邮箱，不依赖桌面客户端和第三方邮件聚合平台。
+
+## 界面预览
+
+<p align="center">
+  <a href="https://ayurain.top/">
+    <img src="docs/images/xmail-preview.png" alt="XMail 登录页面" />
+  </a>
+</p>
 
 ## 功能特性
 
