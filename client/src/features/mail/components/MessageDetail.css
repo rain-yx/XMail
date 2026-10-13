@@ -27,7 +27,6 @@
   padding: 0 18px;
   border-bottom: 1px solid #e7eaf0;
 }
-.detail-toolbar .is-starred { color: #efa929; }
 .detail-loading {
   flex: 1;
   display: flex;

@@ -7,7 +7,6 @@ import {
   File,
   ImageOff,
   Paperclip,
-  Star,
   X,
 } from 'lucide-vue-next';
 import { api } from '@/shared/api/xmail-api.js';
@@ -19,7 +18,7 @@ const props = defineProps({
   loading: Boolean,
   mailbox: { type: String, default: 'INBOX' },
 });
-const emit = defineEmits(['close', 'toggle-star']);
+const emit = defineEmits(['close']);
 const showRemoteImages = ref(false);
 const showRecipients = ref(true);
 const visible = ref(true);
@@ -113,17 +112,6 @@ function formatBytes(bytes) {
         <aside class="message-detail" aria-label="邮件详情">
           <div class="detail-toolbar">
             <button class="square-control" type="button" aria-label="关闭" @click="requestClose"><X :size="20" /></button>
-            <span class="toolbar-spacer"></span>
-            <button
-              v-if="message"
-              type="button"
-              class="square-control"
-              :class="{ 'is-starred': message.flagged }"
-              :aria-label="message.flagged ? '取消星标' : '添加星标'"
-              @click="emit('toggle-star', message)"
-            >
-              <Star :size="19" :fill="message.flagged ? 'currentColor' : 'none'" />
-            </button>
           </div>
 
           <div v-if="loading" class="detail-loading">

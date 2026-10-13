@@ -206,7 +206,6 @@ function handleRequestError(error) {
       :loading="detailLoading"
       :mailbox="activeMailbox"
       @close="activeMessage = null"
-      @toggle-star="toggleStar"
     />
 
     <Teleport to="body">
